@@ -1,7 +1,9 @@
 module Pg exposing (main)
 
+import Browser
 import Html exposing (div, h1, img, text)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
 import List
 
 
@@ -20,7 +22,12 @@ urlPrefix =
 
 
 viewThumbnail selectedUrl thumb =
-    img [ src (urlPrefix ++ thumb.url), classList [ ( "selected", selectedUrl == thumb.url ) ] ] []
+    img
+        [ src (urlPrefix ++ thumb.url)
+        , classList [ ( "selected", selectedUrl == thumb.url ) ]
+        , onClick { description = "ClickedPhoto", data = thumb.url }
+        ]
+        []
 
 
 view model =
@@ -36,5 +43,17 @@ view model =
         ]
 
 
+update msg model =
+    if msg.description == "ClickedPhoto" then
+        { model | selectedUrl = msg.data }
+
+    else
+        model
+
+
 main =
-    view initialModel
+    Browser.sandbox
+        { init = initialModel
+        , view = view
+        , update = update
+        }
