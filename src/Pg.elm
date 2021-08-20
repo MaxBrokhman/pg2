@@ -1,12 +1,25 @@
 module Pg exposing (main)
 
+import Array exposing (Array)
 import Browser
-import Html exposing (div, h1, img, text)
+import Html exposing (Html, div, h1, img, text)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import List
 
 
+type alias Photo =
+    { url : String
+    }
+
+
+type alias Model =
+    { photos : List Photo
+    , selectedUrl : String
+    }
+
+
+initialModel : Model
 initialModel =
     { photos =
         [ { url = "1.jpeg" }
@@ -17,10 +30,17 @@ initialModel =
     }
 
 
+photoArray : Array Photo
+photoArray =
+    Array.fromList initialModel.photos
+
+
+urlPrefix : String
 urlPrefix =
     "http://elm-in-action.com/"
 
 
+viewThumbnail : String -> Photo -> Html Msg
 viewThumbnail selectedUrl thumb =
     img
         [ src (urlPrefix ++ thumb.url)
@@ -30,6 +50,13 @@ viewThumbnail selectedUrl thumb =
         []
 
 
+type alias Msg =
+    { description : String
+    , data : String
+    }
+
+
+view : Model -> Html Msg
 view model =
     div [ class "content" ]
         [ h1 [] [ text "Photo Groove" ]
@@ -43,6 +70,7 @@ view model =
         ]
 
 
+update : Msg -> Model -> Model
 update msg model =
     if msg.description == "ClickedPhoto" then
         { model | selectedUrl = msg.data }
