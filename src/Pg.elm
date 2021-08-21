@@ -2,15 +2,19 @@ module Pg exposing (main)
 
 import Browser
 import Html exposing (..)
-import Html.Attributes exposing (..)
+import Html.Attributes exposing (checked, class, classList, id, name, src, title, type_)
 import Html.Events exposing (onCheck, onClick)
 import Http
+import Json.Decode exposing (Decoder, field, int, list, string, succeed)
+import Json.Decode.Pipeline exposing (optional, required)
 import List
 import Random
 
 
 type alias Photo =
     { url : String
+    , size : Int
+    , title : String
     }
 
 
@@ -36,8 +40,8 @@ initialModel =
 initialCmd : Cmd Msg
 initialCmd =
     Http.get
-        { url = "http://elm-in-action.com/photos/list"
-        , expect = Http.expectString GotPhotos
+        { url = "http://elm-in-action.com/photos/list.json"
+        , expect = Http.expectJson GotPhotos (list photoDecoder)
         }
 
 
@@ -50,6 +54,7 @@ viewThumbnail : String -> Photo -> Html Msg
 viewThumbnail selectedUrl thumb =
     img
         [ src (urlPrefix ++ thumb.url)
+        , title <| thumb.title ++ " [" ++ String.fromInt thumb.size ++ " KB]"
         , classList [ ( "selected", selectedUrl == thumb.url ) ]
         , onClick <| ClickedPhoto thumb.url
         ]
@@ -87,6 +92,14 @@ sizeToString size =
             "large"
 
 
+photoDecoder : Decoder Photo
+photoDecoder =
+    succeed Photo
+        |> required "url" string
+        |> required "size" int
+        |> optional "title" string "untitled"
+
+
 type ThumbnailSize
     = Small
     | Medium
@@ -98,7 +111,7 @@ type Msg
     | GotRandomPhoto Photo
     | ClickedSize ThumbnailSize
     | ClickedSurpriseMe
-    | GotPhotos (Result Http.Error String)
+    | GotPhotos (Result Http.Error (List Photo))
 
 
 view : Model -> Html Msg
@@ -162,10 +175,10 @@ update msg model =
         GotRandomPhoto photo ->
             ( { model | status = selectUrl photo.url model.status }, Cmd.none )
 
-        GotPhotos (Ok responseStr) ->
-            case String.split "," responseStr of
-                (firstUrl :: _) as urls ->
-                    ( { model | status = Loaded (List.map Photo urls) firstUrl }, Cmd.none )
+        GotPhotos (Ok receivedPhotos) ->
+            case receivedPhotos of
+                (firstPhoto :: _) as photos ->
+                    ( { model | status = Loaded photos firstPhoto.url }, Cmd.none )
 
                 [] ->
                     ( { model | status = Errored "No photos found!" }, Cmd.none )
