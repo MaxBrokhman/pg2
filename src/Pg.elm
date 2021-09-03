@@ -2,11 +2,12 @@ module Pg exposing (main)
 
 import Browser
 import Html exposing (..)
-import Html.Attributes exposing (checked, class, classList, id, name, src, title, type_)
+import Html.Attributes as Attr exposing (checked, class, classList, id, name, src, title, type_)
 import Html.Events exposing (onCheck, onClick)
 import Http
-import Json.Decode exposing (Decoder, field, int, list, string, succeed)
+import Json.Decode exposing (Decoder, int, list, string, succeed)
 import Json.Decode.Pipeline exposing (optional, required)
+import Json.Encode
 import List
 import Random
 
@@ -24,9 +25,17 @@ type Status
     | Errored String
 
 
+type alias ImageEffects =
+    { hue : Int
+    , ripple : Int
+    , noise : Int
+    }
+
+
 type alias Model =
     { status : Status
     , chosenSize : ThumbnailSize
+    , imageEffects : ImageEffects
     }
 
 
@@ -34,6 +43,11 @@ initialModel : Model
 initialModel =
     { status = Loading
     , chosenSize = Medium
+    , imageEffects =
+        { hue = 5
+        , ripple = 5
+        , noise = 5
+        }
     }
 
 
@@ -112,6 +126,9 @@ type Msg
     | ClickedSize ThumbnailSize
     | ClickedSurpriseMe
     | GotPhotos (Result Http.Error (List Photo))
+    | SlideHue Int
+    | SlideRipple Int
+    | SlideNoise Int
 
 
 view : Model -> Html Msg
@@ -119,7 +136,7 @@ view model =
     div [ class "content" ] <|
         case model.status of
             Loaded photos selectedUrl ->
-                viewLoaded photos selectedUrl model.chosenSize
+                viewLoaded photos selectedUrl model
 
             Loading ->
                 [ text "Loading..." ]
@@ -128,16 +145,36 @@ view model =
                 [ text ("Error: " ++ errorMessage) ]
 
 
-viewLoaded : List Photo -> String -> ThumbnailSize -> List (Html Msg)
-viewLoaded photos selectedUrl chosenSize =
+viewFilter : (Int -> Msg) -> String -> Int -> Html Msg
+viewFilter toMsg name magnitude =
+    div [ class "filter-slider" ]
+        [ label [] [ text name ]
+        , rangeSlider
+            [ Attr.max "11"
+            , Attr.property "val" <| Json.Encode.int magnitude
+            , onSlide toMsg
+            ]
+            []
+        , label [] [ text <| String.fromInt magnitude ]
+        ]
+
+
+viewLoaded : List Photo -> String -> Model -> List (Html Msg)
+viewLoaded photos selectedUrl model =
     [ h1 [] [ text "Photo Groove" ]
     , button
         [ onClick ClickedSurpriseMe ]
         [ text "Surprise me!" ]
+    , div
+        [ class "filters" ]
+        [ viewFilter SlideHue "Hue" model.imageEffects.hue
+        , viewFilter SlideRipple "Ripple" model.imageEffects.ripple
+        , viewFilter SlideNoise "Noise" model.imageEffects.noise
+        ]
     , h3 [] [ text "Thumbnail size:" ]
     , div [ id "choose-size" ] <|
-        List.map (viewSizeChooser chosenSize) [ Small, Medium, Large ]
-    , div [ id "thumbnails", class <| sizeToString chosenSize ] <|
+        List.map (viewSizeChooser model.chosenSize) [ Small, Medium, Large ]
+    , div [ id "thumbnails", class <| sizeToString model.chosenSize ] <|
         List.map (viewThumbnail selectedUrl) photos
     , img
         [ class "large"
@@ -175,16 +212,46 @@ update msg model =
         GotRandomPhoto photo ->
             ( { model | status = selectUrl photo.url model.status }, Cmd.none )
 
-        GotPhotos (Ok receivedPhotos) ->
-            case receivedPhotos of
-                (firstPhoto :: _) as photos ->
-                    ( { model | status = Loaded photos firstPhoto.url }, Cmd.none )
+        GotPhotos (Ok photos) ->
+            case photos of
+                first :: _ ->
+                    ( { model | status = Loaded photos first.url }, Cmd.none )
 
                 [] ->
                     ( { model | status = Errored "No photos found!" }, Cmd.none )
 
         GotPhotos (Err _) ->
             ( { model | status = Errored "Server error !" }, Cmd.none )
+
+        SlideHue num ->
+            let
+                imageEffects =
+                    model.imageEffects
+
+                updatedEffects =
+                    { imageEffects | hue = num }
+            in
+            ( { model | imageEffects = updatedEffects }, Cmd.none )
+
+        SlideNoise num ->
+            let
+                imageEffects =
+                    model.imageEffects
+
+                updatedEffects =
+                    { imageEffects | noise = num }
+            in
+            ( { model | imageEffects = { updatedEffects | noise = num } }, Cmd.none )
+
+        SlideRipple num ->
+            let
+                imageEffects =
+                    model.imageEffects
+
+                updatedEffects =
+                    { imageEffects | noise = num }
+            in
+            ( { model | imageEffects = { updatedEffects | ripple = num } }, Cmd.none )
 
 
 selectUrl : String -> Status -> Status
@@ -208,3 +275,15 @@ main =
         , update = update
         , subscriptions = \_ -> Sub.none
         }
+
+
+rangeSlider : List (Attribute msg) -> List (Html msg) -> Html msg
+rangeSlider attributes children =
+    node "range-slider" attributes children
+
+
+onSlide : (Int -> msg) -> Attribute msg
+onSlide toMsg =
+    Json.Decode.at [ "detail", "userSlideTo" ] int
+        |> Json.Decode.map toMsg
+        |> Html.Events.on "slide"
