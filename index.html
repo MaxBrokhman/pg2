@@ -33,7 +33,7 @@
     <script src="http://elm-in-action.com/pasta.js"></script>
     <script src="app.js"></script>
     <script>
-      const app = Elm.Pg.init({node: document.getElementById("app")});
+      const app = Elm.Pg.init({node: document.getElementById("app"), flags: Pasta.version});
       console.log(app);
       app.ports.setFilters.subscribe((options) => {
         requestAnimationFrame(() => 
