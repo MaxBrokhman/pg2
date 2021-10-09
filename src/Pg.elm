@@ -15,6 +15,9 @@ import Random
 port setFilters : FilterOptions -> Cmd msg
 
 
+port activityChanges : (String -> msg) -> Sub msg
+
+
 type alias FilterOptions =
     { url : String
     , filters : List { name : String, amount : Float }
@@ -45,6 +48,7 @@ type alias Model =
     { status : Status
     , chosenSize : ThumbnailSize
     , imageEffects : ImageEffects
+    , activity : String
     }
 
 
@@ -57,6 +61,7 @@ initialModel =
         , ripple = 5
         , noise = 5
         }
+    , activity = ""
     }
 
 
@@ -138,6 +143,7 @@ type Msg
     | SlideHue Int
     | SlideRipple Int
     | SlideNoise Int
+    | GotActivity String
 
 
 view : Model -> Html Msg
@@ -174,6 +180,7 @@ viewLoaded photos selectedUrl model =
     , button
         [ onClick ClickedSurpriseMe ]
         [ text "Surprise me!" ]
+    , div [ class "activity" ] [ text model.activity ]
     , div
         [ class "filters" ]
         [ viewFilter SlideHue "Hue" model.imageEffects.hue
@@ -261,6 +268,9 @@ update msg model =
             in
             applyFilters { model | imageEffects = { updatedEffects | ripple = num } }
 
+        GotActivity activity ->
+            ( { model | activity = activity }, Cmd.none )
+
 
 applyFilters : Model -> ( Model, Cmd Msg )
 applyFilters model =
@@ -304,8 +314,13 @@ main =
         { init = \() -> ( initialModel, initialCmd )
         , view = view
         , update = update
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions
         }
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    activityChanges GotActivity
 
 
 rangeSlider : List (Attribute msg) -> List (Html msg) -> Html msg
