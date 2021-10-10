@@ -1,4 +1,4 @@
-port module Pg exposing (main)
+port module Pg exposing (main, photoDecoder)
 
 import Browser
 import Html exposing (..)
@@ -125,7 +125,7 @@ photoDecoder =
     succeed Photo
         |> required "url" string
         |> required "size" int
-        |> optional "title" string "untitled"
+        |> optional "title" string "(untitled)"
 
 
 type ThumbnailSize
