@@ -2,11 +2,14 @@ module PgTests exposing (..)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
+import Html.Attributes exposing (src)
 import Http exposing (Expect)
 import Json.Decode as Decode exposing (decodeValue)
 import Json.Encode as Encode
-import Pg exposing (ImageEffects, Model, Msg(..), Photo, initialModel, update)
+import Pg exposing (ImageEffects, Model, Msg(..), Photo, Status(..), initialModel, update, urlPrefix, view)
 import Test exposing (..)
+import Test.Html.Query as Query
+import Test.Html.Selector exposing (attribute, tag, text)
 
 
 decoderTest : Test
@@ -42,3 +45,14 @@ testSlider description toMsg amountFromModel =
                 |> .imageEffects
                 |> amountFromModel
                 |> Expect.equal amount
+
+
+noPhotosNoThumbnails : Test
+noPhotosNoThumbnails =
+    test "No thumbnails render when there are no photos to render" <|
+        \_ ->
+            initialModel
+                |> view
+                |> Query.fromHtml
+                |> Query.findAll [ tag "img" ]
+                |> Query.count (Expect.equal 0)

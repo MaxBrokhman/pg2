@@ -1,4 +1,4 @@
-port module Pg exposing (Model, Msg(..), Photo, initialModel, main, photoDecoder, update, ImageEffects)
+port module Pg exposing (ImageEffects, Model, Msg(..), Photo, Status(..), initialModel, main, photoDecoder, update, urlPrefix, view)
 
 import Browser
 import Html exposing (..)
