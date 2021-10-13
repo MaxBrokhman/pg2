@@ -5,7 +5,7 @@ import Fuzz exposing (Fuzzer, int, list, string)
 import Http exposing (Expect)
 import Json.Decode as Decode exposing (decodeValue)
 import Json.Encode as Encode
-import Pg exposing (Model, Msg(..), Photo, initialModel, update)
+import Pg exposing (ImageEffects, Model, Msg(..), Photo, initialModel, update)
 import Test exposing (..)
 
 
@@ -23,13 +23,22 @@ decoderTest =
                     (Ok "(untitled)")
 
 
-slideHueSetsHue : Test
-slideHueSetsHue =
-    fuzz int "SlideHue sets the hue" <|
+sliders : Test
+sliders =
+    describe "Slider sets the desired field in the Model"
+        [ testSlider "SlideHue" SlideHue .hue
+        , testSlider "SlideRipple" SlideRipple .ripple
+        , testSlider "SlideNoise" SlideNoise .noise
+        ]
+
+
+testSlider : String -> (Int -> Msg) -> (ImageEffects -> Int) -> Test
+testSlider description toMsg amountFromModel =
+    fuzz int description <|
         \amount ->
             initialModel
-                |> update (SlideHue amount)
+                |> update (toMsg amount)
                 |> Tuple.first
                 |> .imageEffects
-                |> .hue
+                |> amountFromModel
                 |> Expect.equal amount
