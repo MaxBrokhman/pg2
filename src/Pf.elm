@@ -1,6 +1,7 @@
 module Pf exposing (main)
 
 import Browser
+import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes exposing (class, src)
 import Html.Events exposing (onClick)
@@ -12,6 +13,7 @@ import Pg exposing (Msg(..), urlPrefix)
 
 type alias Model =
     { selectedPhotoUrl : Maybe String
+    , photos : Dict String Photo
     }
 
 
@@ -48,7 +50,9 @@ viewRelatedPhoto url =
 
 initialModel : Model
 initialModel =
-    { selectedPhotoUrl = Nothing }
+    { selectedPhotoUrl = Nothing
+    , photos = Dict.empty
+    }
 
 
 init : () -> ( Model, Cmd Msg )
