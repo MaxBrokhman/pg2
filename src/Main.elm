@@ -10,7 +10,9 @@ import Url.Parser as Parser exposing ((</>), Parser, s, string)
 
 
 type alias Model =
-    { page : Page }
+    { page : Page
+    , key : Nav.Key
+    }
 
 
 type Page
@@ -51,16 +53,31 @@ viewHeader page =
     in
     nav [] [ logo, links ]
 
+
 isActive : { link : Page, page : Page } -> Bool
 isActive { link, page } =
-    case (link, page) of
-        (Gallery, Gallery) -> True
-        (Gallery, _) -> False
-        (Folders, Folders) -> True
-        (Folders, SelectedPhoto _) -> True
-        (Folders, _) -> False
-        (SelectedPhoto _, _) -> False
-        (NotFound, _) -> False
+    case ( link, page ) of
+        ( Gallery, Gallery ) ->
+            True
+
+        ( Gallery, _ ) ->
+            False
+
+        ( Folders, Folders ) ->
+            True
+
+        ( Folders, SelectedPhoto _ ) ->
+            True
+
+        ( Folders, _ ) ->
+            False
+
+        ( SelectedPhoto _, _ ) ->
+            False
+
+        ( NotFound, _ ) ->
+            False
+
 
 viewFooter : Html Msg
 viewFooter =
@@ -68,12 +85,22 @@ viewFooter =
 
 
 type Msg
-    = NothigYet
+    = ClickedLink Browser.UrlRequest
+    | ChangedUrl Url
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+        ClickedLink urlRequest ->
+            case urlRequest of
+                Browser.External href ->
+                    ( model, Nav.load href )
+
+                Browser.Internal url ->
+                    ( model, Nav.pushUrl model.key (Url.toString url) )
+        ChangedUrl url ->
+            ({model | page = urlToPage url}, Cmd.none)
 
 
 subscriptions : Model -> Sub Msg
@@ -83,7 +110,7 @@ subscriptions model =
 
 init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( { page = urlToPage url }, Cmd.none )
+    ( { page = urlToPage url, key = key }, Cmd.none )
 
 
 urlToPage : Url -> Page
@@ -105,8 +132,8 @@ main : Program () Model Msg
 main =
     Browser.application
         { init = init
-        , onUrlRequest = \_ -> Debug.todo "handle url request"
-        , onUrlChange = \_ -> Debug.todo "handdle URL change"
+        , onUrlRequest = ClickedLink
+        , onUrlChange = ChangedUrl
         , view = view
         , update = update
         , subscriptions = subscriptions
