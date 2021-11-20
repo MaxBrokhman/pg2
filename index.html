@@ -31,8 +31,8 @@
  <body>
     <div id="app"></div>
     <script src="http://elm-in-action.com/pasta.js"></script>
-    <script src="app.js"></script>
-    <script>
+    <script src="/app.js"></script>
+    <!-- <script>
       const app = Elm.Pg.init({node: document.getElementById("app"), flags: Pasta.version});
       console.log(app);
       app.ports.setFilters.subscribe((options) => {
@@ -44,6 +44,12 @@
       Pasta.addActivityListener((activity) => {
         app.ports.activityChanges.send(activity);
       });
+    </script> -->
+    <!-- <script>
+      const app = Elm.Pf.init({ node: document.getElementById("app") });
+    </script> -->
+    <script>
+      const app = Elm.Main.init({ flags: Pasta.version, node: document.getElementById("app") });
     </script>
  </body>
 </html>

@@ -1,4 +1,4 @@
-module Pf exposing (main)
+module Pf exposing (Model, Msg, init, update, view)
 
 import Browser
 import Dict exposing (Dict)
@@ -111,9 +111,9 @@ initialModel =
     }
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( initialModel
+init : Maybe String -> ( Model, Cmd Msg )
+init selectedFileName =
+    ( { initialModel | selectedPhotoUrl = selectedFileName }
     , Http.get
         { url = "http://elm-in-action.com/folders/list"
         , expect = Http.expectJson GotInitialModel modelDecoder
@@ -168,7 +168,7 @@ view model =
         ]
 
 
-main : Program () Model Msg
+main : Program (Maybe String) Model Msg
 main =
     Browser.element
         { init = init
