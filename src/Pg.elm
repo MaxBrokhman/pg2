@@ -176,8 +176,7 @@ viewFilter toMsg name magnitude =
 
 viewLoaded : List Photo -> String -> Model -> List (Html Msg)
 viewLoaded photos selectedUrl model =
-    [ h1 [] [ text "Photo Groove" ]
-    , button
+    [button
         [ onClick ClickedSurpriseMe ]
         [ text "Surprise me!" ]
     , div [ class "activity" ] [ text model.activity ]
